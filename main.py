@@ -1,4 +1,5 @@
 import redis
+import logging
 from pymongo import MongoClient
 from flask import Flask, request
 
@@ -31,27 +32,33 @@ def get():
     if request.values.get("no-cache"):
         storage_ans = storage.find_one({"key": request.values.get("key")})
         if storage_ans:
-            response["value"] = storage_ans['value']
+            response["value"] = storage_ans["value"]
         else:
             response_code = 404
     else:
         cached_ans = cache.get(request.values.get("key"))
-
-        if not cached_ans:
+        logging.info(cached_ans)
+        if cached_ans:
+            if type(cached_ans) is bytes:
+                cached_ans = cached_ans.decode("utf-8")
+            response["value"] = cached_ans
+        else:
             storage_ans = storage.find_one({"key": request.values.get("key")})
             if storage_ans:
                 response["value"] = storage_ans['value']
-                cache.set(request.values.get("key"), storage_ans["value"])
+                cache.set(request.values.get("key"), str(storage_ans["value"]))
             else:
-                response_code = 200
+                response_code = 404
+
     return response, response_code
 
 
 @app.route('/delete', methods=['DELETE'], endpoint="delete")
-def get(key):
+def get():
     response = {}
     response_code = 200
     deleted_count = storage.delete_one({"key": request.values.get("key")}).deleted_count
+    cache.delete(request.values.get("key"))
     if not deleted_count:
         response_code = 404
     return response, response_code
