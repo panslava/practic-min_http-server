@@ -1,8 +1,4 @@
-import os
-import socket
-import logging
 import redis
-import json
 from pymongo import MongoClient
 from flask import Flask, request
 
@@ -24,7 +20,7 @@ def put():
 def put():
     response = {}
     storage.find_one_and_update(
-        {"key": request.values.get("key")}, {"$set": {"key": request.values.get("key"), "value": request.values.get("message")}}, upsert=True)
+        {"key": request.values.get("key")}, {"$set": {"key": request.values.get("key"), "value": request.values.get("value")}}, upsert=True)
     return response, 200
 
 
@@ -35,7 +31,7 @@ def get():
     if request.values.get("no-cache"):
         storage_ans = storage.find_one({"key": request.values.get("key")})
         if storage_ans:
-            response["message"] = storage_ans['value']
+            response["value"] = storage_ans['value']
         else:
             response_code = 404
     else:
@@ -44,7 +40,7 @@ def get():
         if not cached_ans:
             storage_ans = storage.find_one({"key": request.values.get("key")})
             if storage_ans:
-                response["message"] = storage_ans['value']
+                response["value"] = storage_ans['value']
                 cache.set(request.values.get("key"), storage_ans["value"])
             else:
                 response_code = 200
