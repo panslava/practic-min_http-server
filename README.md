@@ -1,4 +1,4 @@
-## Simple socket server, with mongodb and redis cache
+## Simple http server, with mongodb and redis cache
 
 ``start: docker-compose up``
 
