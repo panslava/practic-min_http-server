@@ -1,6 +1,6 @@
 import redis
 import logging
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -12,55 +12,68 @@ db = db_client.server_storage
 storage = db.storage
 
 
-@app.route('/', endpoint="root")
-def put():
-    return "Hello, world!"
+@app.route('/')
+def root():
+    return 'Hello, world!'
 
 
-@app.route('/put', methods=['POST', 'PUT'], endpoint="put")
+@app.route('/put', methods=['PUT'])
 def put():
     response = {}
     storage.find_one_and_update(
-        {"key": request.values.get("key")}, {"$set": {"key": request.values.get("key"), "value": request.values.get("value")}}, upsert=True)
+        {'key': request.values.get('key')},
+        {'$set': {'key': request.values.get('key'), 'value': request.values.get('value')}}, upsert=True)
     return response, 200
 
 
-@app.route('/get', methods=['GET'], endpoint="get")
+@app.route('/put', methods=['POST'])
+def post():
+    response = {}
+    status_code = 200
+    before = storage.find_one_and_update(
+        {'key': request.values.get('key')},
+        {'$setOnInsert': {'key': request.values.get('key'), 'value': request.values.get('value')}},
+        return_document=ReturnDocument.BEFORE, upsert=True)
+    if before is not None:
+        status_code = 400
+        response = {'ERROR': 'Key already exists'}
+    return response, status_code
+
+
+@app.route('/get', methods=['GET'])
 def get():
     response = {}
     response_code = 200
-    if request.values.get("no-cache"):
-        storage_ans = storage.find_one({"key": request.values.get("key")})
+    if request.values.get('no-cache'):
+        storage_ans = storage.find_one({'key': request.values.get('key')})
         if storage_ans:
-            response["value"] = storage_ans["value"]
+            response['value'] = storage_ans['value']
         else:
             response_code = 404
     else:
-        cached_ans = cache.get(request.values.get("key"))
+        cached_ans = cache.get(request.values.get('key'))
         logging.info(cached_ans)
         if cached_ans:
             if type(cached_ans) is bytes:
-                cached_ans = cached_ans.decode("utf-8")
-            response["value"] = cached_ans
+                cached_ans = cached_ans.decode('utf-8')
+            response['value'] = cached_ans
         else:
-            storage_ans = storage.find_one({"key": request.values.get("key")})
+            storage_ans = storage.find_one({'key': request.values.get('key')})
             if storage_ans:
-                response["value"] = storage_ans['value']
-                cache.set(request.values.get("key"), str(storage_ans["value"]))
+                response['value'] = storage_ans['value']
+                cache.set(request.values.get('key'), str(storage_ans['value']))
             else:
                 response_code = 404
 
     return response, response_code
 
 
-@app.route('/delete', methods=['DELETE'], endpoint="delete")
-def get():
+@app.route('/delete', methods=['DELETE'])
+def delete():
     response = {}
     response_code = 200
-    deleted_count = storage.delete_one({"key": request.values.get("key")}).deleted_count
-    cache.delete(request.values.get("key"))
-    if not deleted_count:
-        response_code = 404
+    storage.delete_one({'key': request.values.get('key')})
+    cache.delete(request.values.get('key'))
     return response, response_code
 
 
