@@ -1,13 +1,16 @@
 import redis
-import logging
-from pymongo import MongoClient, ReturnDocument
+import logging.config
+from pymongo import MongoClient, ReturnDocument, monitoring
 from flask import Flask, request
+
+logging.config.fileConfig('./logging.cfg')
 
 app = Flask(__name__)
 
 cache = redis.Redis(host='redis', port=6379)
 
 db_client = MongoClient('mongodb://root:password@mongo')
+
 db = db_client.server_storage
 storage = db.storage
 
@@ -45,24 +48,29 @@ def get():
     response = {}
     response_code = 200
     if request.values.get('no-cache'):
+        logging.debug('DB get for key: ' + request.values.get('key'))
         storage_ans = storage.find_one({'key': request.values.get('key')})
         if storage_ans:
             response['value'] = storage_ans['value']
         else:
+            logging.error('DB no data for key: ' + request.values.get('key'))
             response_code = 404
     else:
+        logging.debug('CACHE get for key: ' + request.values.get('key'))
         cached_ans = cache.get(request.values.get('key'))
-        logging.info(cached_ans)
         if cached_ans:
             if type(cached_ans) is bytes:
                 cached_ans = cached_ans.decode('utf-8')
             response['value'] = cached_ans
         else:
+            logging.warning('CACHE no data for key' + request.values.get('key'))
+            logging.debug('DB get for key: ' + request.values.get('key'))
             storage_ans = storage.find_one({'key': request.values.get('key')})
             if storage_ans:
                 response['value'] = storage_ans['value']
                 cache.set(request.values.get('key'), str(storage_ans['value']))
             else:
+                logging.error('DB no data for key: ' + request.values.get('key'))
                 response_code = 404
 
     return response, response_code
@@ -78,4 +86,4 @@ def delete():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=65432)
+    app.run(host='0.0.0.0', port=65432)
