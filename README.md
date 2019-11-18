@@ -1,12 +1,26 @@
 ## Simple http server, with mongodb and redis cache
 
-``start: docker-compose up``
+``start: make start``
 
 ``build: docker-compose build``
 
+``restart: make restart``
+
+``test: make test``
+
 ### endpoints:
 
-- `/put POST, PUT `
+- `/put POST`
+
+    Create value by key
+    
+    *Request parameters*:
+    
+    - **key** - *string*
+    
+    - **value** - *any*
+  
+- `/put PUT `
 
     Create or update value by key
     
