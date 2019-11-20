@@ -23,6 +23,7 @@ def root():
 @app.route('/put', methods=['PUT'])
 def put():
     response = {}
+    logging.debug('DB put for key: ' + request.values.get('key'))
     storage.find_one_and_update(
         {'key': request.values.get('key')},
         {'$set': {'key': request.values.get('key'), 'value': request.values.get('value')}}, upsert=True)
@@ -33,6 +34,7 @@ def put():
 def post():
     response = {}
     status_code = 200
+    logging.debug('DB post for key: ' + request.values.get('key'))
     before = storage.find_one_and_update(
         {'key': request.values.get('key')},
         {'$setOnInsert': {'key': request.values.get('key'), 'value': request.values.get('value')}},
@@ -80,7 +82,9 @@ def get():
 def delete():
     response = {}
     response_code = 200
+    logging.debug('DB delete for key: ' + request.values.get('key'))
     storage.delete_one({'key': request.values.get('key')})
+    logging.debug('CACHE delete for key: ' + request.values.get('key'))
     cache.delete(request.values.get('key'))
     return response, response_code
 
