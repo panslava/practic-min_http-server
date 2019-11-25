@@ -17,4 +17,5 @@ install:
 
 jobs:
   include:
-    - script: make test
+    - stage: test
+      script: make test
