@@ -1,6 +1,7 @@
 version: "3"
 services:
   python_server:
+    image: panslava/http_server
     build: .
     ports:
       - "65432:65432"

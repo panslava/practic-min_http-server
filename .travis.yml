@@ -5,6 +5,7 @@ language: python
 
 env:
   - DOCKER_COMPOSE_VERSION=1.24.1
+  - DOCKER_USERNAME=panslava
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
@@ -17,4 +18,11 @@ install:
 
 script:
   - make test
+
+after_success:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t http_server .
+  - docker images
+  - docker tag travis-ci-build-stages-demo $DOCKER_USERNAME/http_server
+  - docker push $DOCKER_USERNAME/http_server
 
