@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/panslava/practic-min_http-server.svg?branch=master)](https://travis-ci.org/panslava/practic-min_http-server)
+
 ## Simple http server, with mongodb and redis cache
 
 ``start: make start``
