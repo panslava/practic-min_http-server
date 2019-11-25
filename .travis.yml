@@ -15,7 +15,6 @@ before_install:
 install:
   - pip3 install requests
 
-jobs:
-  include:
-    - stage: test
-      script: make test
+script:
+  - make test
+
